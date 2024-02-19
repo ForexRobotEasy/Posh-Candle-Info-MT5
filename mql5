@@ -1,0 +1,97 @@
+
+//+------------------------------------------------------------------+
+//|                                                       Posh Candle Info MT5|
+//|                              https://www.forexroboteasy.com|
+//|                                             Developed by Forex Robot Easy Team|
+//+------------------------------------------------------------------+
+#property version   '1.00'
+#property strict
+#property indicator_chart_window
+#property indicator_buffers 0
+#property indicator_plots   2
+#property indicator_label1  'Candle Range Points'
+#property indicator_type1   DRAW_LINE
+#property indicator_color1  clrDodgerBlue
+#property indicator_style1  STYLE_SOLID
+#property indicator_width1  2
+#property indicator_label2  'Upper Wick Points'
+#property indicator_type2   DRAW_LINE
+#property indicator_color2  clrGreen
+#property indicator_style2  STYLE_DOT
+#property indicator_width2  1
+#property indicator_level2  0.5
+#property indicator_label3  'Lower Wick Points'
+#property indicator_type3   DRAW_LINE
+#property indicator_color3  clrRed
+#property indicator_style3  STYLE_DOT
+#property indicator_width3  1
+#property indicator_level3  0.5
+
+input string TimeZone = 'GMT';
+input color LargeBodyColor = clrGreen;
+input color SmallBodyColor = clrRed;
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   IndicatorSetString(INDICATOR_SHORTNAME, 'Posh Candle Info MT5');
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &time[],
+                const double &open[],
+                const double &high[],
+                const double &low[],
+                const double &close[],
+                const long &tick_volume[],
+                const long &volume[],
+                const int &spread[])
+{
+   int limit;
+   if(prev_calculated == 0)
+      limit = rates_total - 1;
+   else
+      limit = rates_total - prev_calculated;
+
+   for(int i = limit; i >= 0; i--)
+   {
+      datetime candleTime = TimeLocal(time[i], TimeZone);
+      int barNumber = Bars - i;
+      double rangePoints = high[i] - low[i];
+      double upperWickPoints = high[i] - max(open[i], close[i]);
+      double lowerWickPoints = min(open[i], close[i]) - low[i];
+      double bodyPoints = abs(close[i] - open[i]);
+      double bodyPercentage = bodyPoints / rangePoints * 100;
+      double upperWickPercentage = upperWickPoints / rangePoints * 100;
+      double lowerWickPercentage = lowerWickPoints / rangePoints * 100;
+
+      if(bodyPoints >= 0.5)
+         PlotIndexSetInteger(0, PLOT_COLOR, LargeBodyColor);
+      else
+         PlotIndexSetInteger(0, PLOT_COLOR, SmallBodyColor);
+
+      PlotIndexSetDouble(0, PLOT_VALUE, rangePoints);
+      PlotIndexSetDouble(1, PLOT_VALUE, upperWickPercentage);
+      PlotIndexSetDouble(2, PLOT_VALUE, lowerWickPercentage);
+
+      Comment('Time Zone: ', TimeZone,
+              '\nBar Number: ', barNumber,
+              '\nCandle Range Points: ', rangePoints,
+              '\nUpper Wick Points: ', upperWickPoints,
+              '\nUpper Wick Percentage: ', upperWickPercentage, '%',
+              '\nBody Points: ', bodyPoints,
+              '\nBody Percentage: ', bodyPercentage, '%',
+              '\nLower Wick Points: ', lowerWickPoints,
+              '\nLower Wick Percentage: ', lowerWickPercentage, '%');
+
+   }
+
+   return(rates_total);
+}
